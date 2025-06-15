@@ -30,6 +30,28 @@ export function getAuthTypeEnvVars(authType: string | undefined): AuthEnvVars {
         KEYCLOAK_SECRET: maskValue(process.env.KEYCLOAK_SECRET),
         KEYCLOAK_ISSUER: maskValue(process.env.KEYCLOAK_ISSUER),
       };
+    case AuthType.OAUTH:
+      const oauthProvider = process.env.KEEP_OAUTH_PROVIDER?.toLowerCase();
+      const baseOAuthVars = {
+        KEEP_OAUTH_PROVIDER: maskValue(process.env.KEEP_OAUTH_PROVIDER),
+      };
+      
+      if (oauthProvider === "github") {
+        return {
+          ...baseOAuthVars,
+          KEEP_OAUTH_GITHUB_CLIENT_ID: maskValue(process.env.KEEP_OAUTH_GITHUB_CLIENT_ID),
+          KEEP_OAUTH_GITHUB_CLIENT_SECRET: maskValue(process.env.KEEP_OAUTH_GITHUB_CLIENT_SECRET),
+        };
+      } else if (oauthProvider === "azuread") {
+        return {
+          ...baseOAuthVars,
+          KEEP_OAUTH_AZUREAD_CLIENT_ID: maskValue(process.env.KEEP_OAUTH_AZUREAD_CLIENT_ID),
+          KEEP_OAUTH_AZUREAD_CLIENT_SECRET: maskValue(process.env.KEEP_OAUTH_AZUREAD_CLIENT_SECRET),
+          KEEP_OAUTH_AZUREAD_TENANT_ID: maskValue(process.env.KEEP_OAUTH_AZUREAD_TENANT_ID),
+        };
+      } else {
+        return baseOAuthVars;
+      }
     case AuthType.DB:
       return {
         API_URL: maskValue(process.env.API_URL),

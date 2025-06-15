@@ -21,6 +21,7 @@ export interface Providers {
   credentials?: Provider;
   keycloak?: Provider;
   "microsoft-entra-id"?: Provider;
+  github?: Provider;
 }
 
 interface SignInFormInputs {
@@ -106,6 +107,9 @@ export default function SignInForm({
         signIn("credentials", {
           callbackUrl: callbackWithTenant,
         });
+      } else if (providers.github) {
+        console.log("Signing in with GitHub OAuth provider");
+        signIn("github", { callbackUrl: "/" });
       } else {
         console.log("No providers found");
       }

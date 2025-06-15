@@ -59,9 +59,11 @@ export default function SettingsPage() {
 
   // future: feature flags
   const usersAllowed = authType !== AuthType.NOAUTH;
-  // azure and noauth do not allow user creation
+  // azure, oauth, and noauth do not allow user creation
   const userCreationAllowed =
-    authType !== AuthType.NOAUTH && authType !== AuthType.AZUREAD;
+    authType !== AuthType.NOAUTH &&
+    authType !== AuthType.AZUREAD &&
+    authType !== AuthType.OAUTH;
   const rolesAllowed = authType !== AuthType.NOAUTH;
   const customRolesAllowed = authType === AuthType.KEYCLOAK;
   const ssoAllowed = authType === AuthType.KEYCLOAK;

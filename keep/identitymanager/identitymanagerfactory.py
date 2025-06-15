@@ -23,6 +23,7 @@ class IdentityManagerTypes(enum.Enum):
     DB = "db"
     NOAUTH = "noauth"
     OAUTH2PROXY = "oauth2proxy"
+    OAUTH = "oauth"
 
 
 class IdentityManagerFactory:
