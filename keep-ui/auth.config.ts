@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import Keycloak from "next-auth/providers/keycloak";
 import Auth0 from "next-auth/providers/auth0";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import GitHub from "next-auth/providers/github";
 import { AuthError } from "next-auth";
 import { AuthenticationError, AuthErrorCodes } from "@/errors";
 import type { JWT } from "next-auth/jwt";
@@ -93,6 +94,38 @@ const baseProviderConfigs = {
       },
     }),
   ],
+  [AuthType.OAUTH]: (() => {
+    const authProvider = process.env.AUTH_PROVIDER?.toLowerCase();
+
+    if (authProvider === "azure-ad") {
+      return [MicrosoftEntraID({
+        clientId: process.env.AUTH_AZURE_AD_ID!,
+        clientSecret: process.env.AUTH_AZURE_AD_SECRET!,
+        issuer: `https://login.microsoftonline.com/${process.env.AUTH_AZURE_AD_TENANT_ID!}/v2.0`,
+        authorization: {
+          params: {
+            scope: `api://${process.env.KEEP_AZUREAD_CLIENT_ID!}/default openid profile email`,
+          },
+        },
+        client: {
+          token_endpoint_auth_method: "client_secret_post",
+        },
+      })];
+    } else if (authProvider === "github") {
+      return [GitHub({
+        clientId: process.env.AUTH_GITHUB_ID!,
+        clientSecret: process.env.AUTH_GITHUB_SECRET!,
+        authorization: {
+          params: {
+            scope: "read:user user:email",
+          },
+        },
+      })];
+    } else {
+      console.warn(`Unknown auth provider: ${authProvider}. No NextAuth providers configured.`);
+      return [];
+    }
+  })(),
   [AuthType.DB]: [
     Credentials({
       name: "Credentials",
@@ -293,6 +326,12 @@ export const config = {
           tenantId = (profile as any).keep_tenant_id || "keep";
           role = (profile as any).keep_role;
           accessToken = account.access_token;
+        } else if (authType === AuthType.OAUTH) {
+          // NextAuth handles the authorization flow to get the access token,
+          // then passes it to the backend and the backend will use it to fetch user info from the provider
+          accessToken = account.access_token; // Access token passed to backend
+          tenantId = "keep"; // Default tenant
+          role = undefined; // Role will be determined by backend based on user mappings
         } else {
           accessToken =
             user.accessToken || account.access_token || account.id_token;

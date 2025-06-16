@@ -34,6 +34,10 @@ export function getAuthTypeEnvVars(authType: string | undefined): AuthEnvVars {
       return {
         API_URL: maskValue(process.env.API_URL),
       };
+    case AuthType.OAUTH:
+      return {
+        AUTH_PROVIDER: process.env.AUTH_PROVIDER ?? "NULL",
+      };
     case AuthType.NOAUTH:
       return {};
     default:

@@ -21,6 +21,7 @@ export interface Providers {
   credentials?: Provider;
   keycloak?: Provider;
   "microsoft-entra-id"?: Provider;
+  github?: Provider;
 }
 
 interface SignInFormInputs {
@@ -77,6 +78,9 @@ export default function SignInForm({
       } else if (providers["microsoft-entra-id"]) {
         console.log("Signing in with Azure AD provider");
         signIn("microsoft-entra-id", { callbackUrl: "/" });
+      } else if (providers.github) {
+        console.log("Signing in with GitHub provider");
+        signIn("github", { callbackUrl: "/" });
       } else if (
         providers.credentials &&
         providers.credentials.name == "NoAuth"
