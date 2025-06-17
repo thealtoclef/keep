@@ -17,6 +17,7 @@ import {
   NoAuthUserEmail,
   NoAuthTenant,
 } from "@/utils/authenticationType";
+import * as jwt from "jsonwebtoken";
 
 export class BackendRefusedError extends AuthError {
   static type = "BackendRefusedError";
@@ -102,24 +103,11 @@ const baseProviderConfigs = {
         clientId: process.env.AUTH_AZURE_AD_ID!,
         clientSecret: process.env.AUTH_AZURE_AD_SECRET!,
         issuer: `https://login.microsoftonline.com/${process.env.AUTH_AZURE_AD_TENANT_ID!}/v2.0`,
-        authorization: {
-          params: {
-            scope: `api://${process.env.KEEP_AZUREAD_CLIENT_ID!}/default openid profile email`,
-          },
-        },
-        client: {
-          token_endpoint_auth_method: "client_secret_post",
-        },
       })];
     } else if (authProvider === "github") {
       return [GitHub({
         clientId: process.env.AUTH_GITHUB_ID!,
         clientSecret: process.env.AUTH_GITHUB_SECRET!,
-        authorization: {
-          params: {
-            scope: "read:user user:email",
-          },
-        },
       })];
     } else {
       console.warn(`Unknown auth provider: ${authProvider}. No NextAuth providers configured.`);
@@ -327,11 +315,32 @@ export const config = {
           role = (profile as any).keep_role;
           accessToken = account.access_token;
         } else if (authType === AuthType.OAUTH) {
-          // NextAuth handles the authorization flow to get the access token,
-          // then passes it to the backend and the backend will use it to fetch user info from the provider
-          accessToken = account.access_token; // Access token passed to backend
+          // This block is executed only on the first sign-in.
+          // We create a short-lived JWT signed with NEXTAUTH_SECRET.
+          // This token contains the user's profile and is sent to the backend for verification.
+          const userProfile = {
+            email: user.email,
+            name: user.name,
+            // Use the provider from the account object, which is reliable.
+            provider: account.provider,
+          };
+
+          const secret = process.env.NEXTAUTH_SECRET;
+          if (!secret) {
+            throw new Error(
+              "NEXTAUTH_SECRET is not set. It's required for signing the JWT."
+            );
+          }
+
+          // Create a short-lived token (1 minute) for the backend to verify.
+          // This is secure because it's used immediately and then discarded.
+          accessToken = jwt.sign(userProfile, secret, {
+            algorithm: "HS256",
+            expiresIn: "1m", // 1 minute expiration
+          });
+
           tenantId = "keep"; // Default tenant
-          role = undefined; // Role will be determined by backend based on user mappings
+          role = undefined; // Role will be determined by the backend.
         } else {
           accessToken =
             user.accessToken || account.access_token || account.id_token;

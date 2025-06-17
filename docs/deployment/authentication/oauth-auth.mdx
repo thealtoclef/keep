@@ -28,11 +28,11 @@ sequenceDiagram
     OAuth Auth-->>User: Asks for consent
     User-->>OAuth Auth: Grants consent
     OAuth Auth-->>Frontend (Next.js): Redirects with authorization code
-    Frontend (Next.js)->>OAuth Auth: Exchanges code for access token
-    OAuth Auth-->>Frontend (Next.js): Returns access token
-    Frontend (Next.js)->>Backend (FastAPI): Makes API request with access token
-    Backend (FastAPI)->>OAuth Auth: Verifies token and gets user info
-    OAuth Auth-->>Backend (FastAPI): Returns user info
+    Frontend (Next.js)->>OAuth Auth: Exchanges code for access token & user info
+    OAuth Auth-->>Frontend (Next.js): Returns access token & user profile
+    Note over Frontend (Next.js): NextAuth.js extracts user info<br/>and embeds it in JWT token
+    Frontend (Next.js)->>Backend (FastAPI): Makes API request with encoded token
+    Note over Backend (FastAPI): Extracts user info directly<br/>from token (no additional API call)
     Backend (FastAPI)->>Backend (FastAPI): Provisions user and maps role
     Backend (FastAPI)-->>Frontend (Next.js): Returns API response
 ```
@@ -47,12 +47,15 @@ The frontend is a Next.js application that uses the `next-auth` library to handl
 
 ### Backend
 
-The backend is a FastAPI application that validates the access token and handles user management.
+The backend is a FastAPI application that validates JWT tokens and handles user management.
 
 -   **`identitymanager/identity_managers/oauth/oauth_identitymanager.py`**: This is the main entry point for OAuth identity management. It uses the `OAuthVerifier`.
 -   **`identitymanager/identity_managers/oauth/oauth_authverifier.py`**: This is the core of the backend authentication logic.
-    -   The `OAuthVerifier` class receives the access token from the frontend in the `Authorization` header.
-    -   It calls the `get_user_info` function, which fetches user details from the OAuth provider's API (e.g., GitHub or Azure AD).
+    -   The `OAuthVerifier` class receives a signed JWT token from the frontend in the `Authorization` header.
+    -   **JWT Verification**: The token is verified using `NEXTAUTH_SECRET` to ensure authenticity and extract user information.
+    -   **Provider-Agnostic**: No provider-specific logic is needed on the backend since NextAuth.js handles provider differences on the frontend.
+    -   **No External API Calls**: User information is extracted directly from the verified JWT payload, eliminating external dependencies.
+    -   **Short-lived Tokens**: Tokens are valid for 1 minute, which is a security best practice for tokens that are used immediately for verification.
     -   It uses the `RoleMapper` to determine the user's role based on their email address.
     -   It performs auto-provisioning by creating a new user in the database if one does not already exist, or updates the existing user's role if it has changed in the role mapping configuration.
     -   It checks if the user's role has the required permissions for the requested API endpoint.
@@ -80,15 +83,28 @@ role_mappings:
 
 ## Adding a New Provider
 
-To add a new OAuth provider, you need to make changes in both the frontend and backend.
+To add a new OAuth provider, only frontend changes are required. The backend is provider-agnostic.
 
-1.  **Frontend (`auth.config.ts`):**
-    -   Add the new provider from `next-auth/providers`.
-    -   Add a new condition to the `[AuthType.OAUTH]` configuration to handle the new provider based on the `AUTH_PROVIDER` environment variable.
-    -   Add the necessary environment variables for the new provider's client ID and secret.
+### 1. Frontend Configuration (`auth.config.ts`)
 
-2.  **Backend (`oauth_authverifier.py`):**
-    -   Add a new condition to the `get_user_info` function to handle the new provider.
-    -   Implement the logic to call the new provider's user info API endpoint and extract the user's email and name.
+-   **Import the Provider:** Add the new provider from `next-auth/providers`.
+-   **Configure the Provider:** In the `[AuthType.OAUTH]` section, add a new condition for your provider based on the `AUTH_PROVIDER` environment variable.
+-   **Set Scopes:** Ensure the provider scopes include email access (e.g., `profile`, `email`).
+-   **Environment Variables:** Add the necessary client ID and secret for the new provider in your environment variables.
 
-This generic approach ensures that the core authentication and user management logic remains the same, and only provider-specific details need to be added.
+### 2. Backend Configuration
+
+No changes are required on the backend. The JWT-based verification works for any OAuth provider configured on the frontend.
+
+### 3. Environment Variable Setup
+
+-   **`AUTH_PROVIDER`**: Set this to the name of your new provider (e.g., "google", "okta").
+-   **`NEXTAUTH_SECRET`**: This is required for signing and verifying the JWT.
+-   **Provider Credentials**: Add the `CLIENT_ID` and `CLIENT_SECRET` for your new provider.
+
+## Security Features
+
+-   **JWT-based Authentication:** Tokens are signed with `NEXTAUTH_SECRET` using the HS256 algorithm.
+-   **Short-lived Tokens:** 1-minute token expiration for security best practices.
+-   **No External Dependencies:** The backend doesn't rely on external OAuth provider APIs during request processing.
+-   **Provider Verification:** Tokens contain provider information to ensure the authentication source's integrity.
