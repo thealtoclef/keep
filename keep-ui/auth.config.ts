@@ -335,11 +335,11 @@ export const config = {
             );
           }
 
-          // Create a short-lived token (1 minute) for the backend to verify.
-          // This is secure because it's used immediately and then discarded.
+          // Create a token with the same expiration as the auth session.
+          // This ensures consistency with the application's session management.
           accessToken = jwt.sign(userProfile, secret, {
             algorithm: "HS256",
-            expiresIn: "1m", // 1 minute expiration
+            expiresIn: authSessionTimeout, // Use configured session timeout
           });
 
           tenantId = "keep"; // Default tenant

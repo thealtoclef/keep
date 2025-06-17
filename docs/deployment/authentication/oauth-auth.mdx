@@ -55,7 +55,7 @@ The backend is a FastAPI application that validates JWT tokens and handles user 
     -   **JWT Verification**: The token is verified using `NEXTAUTH_SECRET` to ensure authenticity and extract user information.
     -   **Provider-Agnostic**: No provider-specific logic is needed on the backend since NextAuth.js handles provider differences on the frontend.
     -   **No External API Calls**: User information is extracted directly from the verified JWT payload, eliminating external dependencies.
-    -   **Short-lived Tokens**: Tokens are valid for 1 minute, which is a security best practice for tokens that are used immediately for verification.
+    -   **Configurable Token Expiration**: Tokens use the same expiration as the auth session timeout (configurable via `AUTH_SESSION_TIMEOUT`, defaults to 30 days), ensuring consistency with session management.
     -   It uses the `RoleMapper` to determine the user's role based on their email address.
     -   It performs auto-provisioning by creating a new user in the database if one does not already exist, or updates the existing user's role if it has changed in the role mapping configuration.
     -   It checks if the user's role has the required permissions for the requested API endpoint.
@@ -105,6 +105,6 @@ No changes are required on the backend. The JWT-based verification works for any
 ## Security Features
 
 -   **JWT-based Authentication:** Tokens are signed with `NEXTAUTH_SECRET` using the HS256 algorithm.
--   **Short-lived Tokens:** 1-minute token expiration for security best practices.
+-   **Configurable Token Expiration:** Token expiration matches the auth session timeout (configurable via `AUTH_SESSION_TIMEOUT`).
 -   **No External Dependencies:** The backend doesn't rely on external OAuth provider APIs during request processing.
 -   **Provider Verification:** Tokens contain provider information to ensure the authentication source's integrity.
