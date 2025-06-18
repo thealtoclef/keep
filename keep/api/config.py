@@ -6,6 +6,7 @@ from keep.api.alert_deduplicator.deduplication_rules_provisioning import (
     provision_deduplication_rules_from_env,
 )
 from keep.api.api import AUTH_TYPE
+from keep.api.core.api_key_provisioning import provision_api_keys_from_env
 from keep.api.core.db_on_start import migrate_db, try_create_single_tenant
 from keep.api.core.dependencies import SINGLE_TENANT_UUID
 from keep.api.core.tenant_configuration import TenantConfiguration
@@ -36,6 +37,9 @@ def provision_resources():
         logger.info("Provisioning deduplication rules")
         provision_deduplication_rules_from_env(SINGLE_TENANT_UUID)
         logger.info("Deduplication rules provisioned successfully")
+        logger.info("Provisioning API keys")
+        provision_api_keys_from_env(SINGLE_TENANT_UUID)
+        logger.info("API keys provisioned successfully")
     else:
         logger.info("Provisioning resources is disabled")
 
