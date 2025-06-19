@@ -32,17 +32,17 @@ class OAuthVerifier(AuthVerifierBase):
         self, token: str = Depends(oauth2_scheme)
     ) -> AuthenticatedEntity:
         try:
-            # Get the NEXTAUTH_SECRET from environment
-            nextauth_secret = os.environ.get("NEXTAUTH_SECRET")
-            if not nextauth_secret:
+            # Get the KEEP_JWT_SECRET from environment
+            keep_jwt_secret = os.environ.get("KEEP_JWT_SECRET")
+            if not keep_jwt_secret:
                 raise HTTPException(
                     status_code=500,
-                    detail="NEXTAUTH_SECRET must be configured for OAuth authentication.",
+                    detail="KEEP_JWT_SECRET must be configured for OAuth authentication.",
                 )
 
             try:
                 # Verify and decode the JWT token signed by NextAuth
-                payload = jwt.decode(token, nextauth_secret, algorithms=["HS256"])
+                payload = jwt.decode(token, keep_jwt_secret, algorithms=["HS256"])
 
                 # Extract email from the verified payload
                 email = payload.get("email")

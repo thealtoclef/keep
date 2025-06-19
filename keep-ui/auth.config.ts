@@ -319,7 +319,7 @@ export const config = {
           accessToken = account.access_token;
         } else if (authType === AuthType.OAUTH) {
           // This block is executed only on the first sign-in.
-          // We create a short-lived JWT signed with NEXTAUTH_SECRET.
+          // We create a short-lived JWT signed with KEEP_JWT_SECRET.
           // This token contains the user's profile and is sent to the backend for verification.
           const userProfile = {
             email: user.email,
@@ -328,10 +328,10 @@ export const config = {
             provider: account.provider,
           };
 
-          const secret = process.env.NEXTAUTH_SECRET;
+          const secret = process.env.KEEP_JWT_SECRET;
           if (!secret) {
             throw new Error(
-              "NEXTAUTH_SECRET is not set. It's required for signing the JWT."
+              "KEEP_JWT_SECRET is not set. It's required for signing the JWT."
             );
           }
 

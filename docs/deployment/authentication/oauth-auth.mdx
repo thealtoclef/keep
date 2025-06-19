@@ -52,7 +52,7 @@ The backend is a FastAPI application that validates JWT tokens and handles user 
 -   **`identitymanager/identity_managers/oauth/oauth_identitymanager.py`**: This is the main entry point for OAuth identity management. It uses the `OAuthVerifier`.
 -   **`identitymanager/identity_managers/oauth/oauth_authverifier.py`**: This is the core of the backend authentication logic.
     -   The `OAuthVerifier` class receives a signed JWT token from the frontend in the `Authorization` header.
-    -   **JWT Verification**: The token is verified using `NEXTAUTH_SECRET` to ensure authenticity and extract user information.
+    -   **JWT Verification**: The token is verified using `KEEP_JWT_SECRET` to ensure authenticity and extract user information.
     -   **Provider-Agnostic**: No provider-specific logic is needed on the backend since NextAuth.js handles provider differences on the frontend.
     -   **No External API Calls**: User information is extracted directly from the verified JWT payload, eliminating external dependencies.
     -   **Configurable Token Expiration**: Tokens use the same expiration as the auth session timeout (configurable via `AUTH_SESSION_TIMEOUT`, defaults to 30 days), ensuring consistency with session management.
@@ -99,12 +99,12 @@ No changes are required on the backend. The JWT-based verification works for any
 ### 3. Environment Variable Setup
 
 -   **`AUTH_PROVIDER`**: Set this to the name of your new provider (e.g., "google", "okta").
--   **`NEXTAUTH_SECRET`**: This is required for signing and verifying the JWT.
+-   **`KEEP_JWT_SECRET`**: This is required for signing and verifying the JWT.
 -   **Provider Credentials**: Add the `CLIENT_ID` and `CLIENT_SECRET` for your new provider.
 
 ## Security Features
 
--   **JWT-based Authentication:** Tokens are signed with `NEXTAUTH_SECRET` using the HS256 algorithm.
+-   **JWT-based Authentication:** Tokens are signed with `KEEP_JWT_SECRET` using the HS256 algorithm.
 -   **Configurable Token Expiration:** Token expiration matches the auth session timeout (configurable via `AUTH_SESSION_TIMEOUT`).
 -   **No External Dependencies:** The backend doesn't rely on external OAuth provider APIs during request processing.
 -   **Provider Verification:** Tokens contain provider information to ensure the authentication source's integrity.
