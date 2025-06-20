@@ -107,6 +107,12 @@ DB_MAX_OVERFLOW = config(
 DB_ECHO = config(
     "DATABASE_ECHO", default=False, cast=bool
 )  # pylint: disable=invalid-name
+DB_POOL_RECYCLE = config(
+    "DATABASE_POOL_RECYCLE", default=3600, cast=int
+)  # pylint: disable=invalid-name
+DB_POOL_TIMEOUT = config(
+    "DATABASE_POOL_TIMEOUT", default=30, cast=int
+)  # pylint: disable=invalid-name
 KEEP_FORCE_CONNECTION_STRING = config(
     "KEEP_FORCE_CONNECTION_STRING", default=False, cast=bool
 )  # pylint: disable=invalid-name
@@ -142,6 +148,8 @@ def create_db_engine():
             json_serializer=dumps,
             pool_size=DB_POOL_SIZE,
             max_overflow=DB_MAX_OVERFLOW,
+            pool_recycle=DB_POOL_RECYCLE,
+            pool_timeout=DB_POOL_TIMEOUT,
         )
     elif DB_CONNECTION_STRING == "impersonate":
         engine = create_engine(
@@ -149,6 +157,8 @@ def create_db_engine():
             creator=__get_conn_impersonate,
             echo=DB_ECHO,
             json_serializer=dumps,
+            pool_recycle=DB_POOL_RECYCLE,
+            pool_timeout=DB_POOL_TIMEOUT,
         )
     elif DB_CONNECTION_STRING:
         try:
@@ -160,6 +170,8 @@ def create_db_engine():
                 json_serializer=dumps,
                 echo=DB_ECHO,
                 pool_pre_ping=True if KEEP_DB_PRE_PING_ENABLED else False,
+                pool_recycle=DB_POOL_RECYCLE,
+                pool_timeout=DB_POOL_TIMEOUT,
             )
         # SQLite does not support pool_size
         except TypeError:
