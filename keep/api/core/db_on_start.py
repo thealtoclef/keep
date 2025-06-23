@@ -99,62 +99,6 @@ def try_create_single_tenant(tenant_id: str, create_default_user=True) -> None:
                     )
                     user.username = DEFAULT_USERNAME
                 logger.info("Default user password updated")
-            # provision default api keys
-            if os.environ.get("KEEP_DEFAULT_API_KEYS", ""):
-                logger.info("Provisioning default api keys")
-                from keep.contextmanager.contextmanager import ContextManager
-                from keep.secretmanager.secretmanagerfactory import SecretManagerFactory
-
-                default_api_keys = os.environ.get("KEEP_DEFAULT_API_KEYS").split(",")
-                for default_api_key in default_api_keys:
-                    try:
-                        api_key_name, api_key_role, api_key_secret = (
-                            default_api_key.strip().split(":")
-                        )
-                    except ValueError:
-                        logger.error(
-                            "Invalid format for default api key. Expected format: name:role:secret"
-                        )
-                    # Create the default api key for the default user
-                    api_key = session.exec(
-                        select(TenantApiKey).where(
-                            TenantApiKey.reference_id == api_key_name
-                        )
-                    ).first()
-                    if api_key:
-                        logger.info(f"Api key {api_key_name} already exists")
-                        continue
-                    logger.info(f"Provisioning api key {api_key_name}")
-                    hashed_api_key = hashlib.sha256(
-                        api_key_secret.encode("utf-8")
-                    ).hexdigest()
-                    new_installation_api_key = TenantApiKey(
-                        tenant_id=tenant_id,
-                        reference_id=api_key_name,
-                        key_hash=hashed_api_key,
-                        is_system=True,
-                        created_by="system",
-                        role=api_key_role,
-                    )
-                    session.add(new_installation_api_key)
-                    # write to the secret manager
-                    context_manager = ContextManager(tenant_id=tenant_id)
-                    secret_manager = SecretManagerFactory.get_secret_manager(
-                        context_manager
-                    )
-                    try:
-                        secret_manager.write_secret(
-                            secret_name=f"{tenant_id}-{api_key_name}",
-                            secret_value=api_key_secret,
-                        )
-                    # probably 409 if the secret already exists, but we don't want to fail on that
-                    except Exception:
-                        logger.exception(
-                            f"Failed to write secret for api key {api_key_name}"
-                        )
-                        pass
-                    logger.info(f"Api key {api_key_name} provisioned")
-                logger.info("Api keys provisioned")
 
             # commit the changes
             session.commit()
