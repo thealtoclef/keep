@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from keep.api.core.db_utils import create_db_engine
 from keep.api.models.db.tenant import TenantApiKey
@@ -24,20 +24,20 @@ def provision_api_keys(api_keys: dict, tenant_id: str) -> None:
     """
     try:
         with Session(engine) as session:
-            # Get existing system API keys
+            desired_keys_set = set(api_keys.keys())
+
             existing_api_keys = session.exec(
                 select(TenantApiKey).where(
                     TenantApiKey.tenant_id == tenant_id,
-                    TenantApiKey.is_system == True,
-                    TenantApiKey.created_by == "system",
+                    or_(
+                        TenantApiKey.is_system == True,
+                        TenantApiKey.key_hash.in_(desired_keys_set),
+                    ),
                 )
             ).all()
             existing_keys_map = {
                 api_key.key_hash: api_key for api_key in existing_api_keys
             }
-
-            # Set operations for efficient reconciliation
-            desired_keys_set = set(api_keys.keys())
             existing_keys_set = set(existing_keys_map.keys())
 
             keys_to_create = desired_keys_set - existing_keys_set
@@ -123,6 +123,8 @@ def provision_api_keys(api_keys: dict, tenant_id: str) -> None:
                     existing_key.reference_id = api_key_name
                     existing_key.role = api_key_role
                     existing_key.is_deleted = False
+                    existing_key.is_system = True
+                    existing_key.created_by = "system"
 
                     # write to the secret manager with new name
                     try:
