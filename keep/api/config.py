@@ -62,6 +62,7 @@ def on_starting(server=None):
         IdentityManagerTypes.DB.value,
         IdentityManagerTypes.NOAUTH.value,
         IdentityManagerTypes.OAUTH2PROXY.value,
+        IdentityManagerTypes.OAUTH.value,
         "no_auth",  # backwards compatibility
         "single_tenant",  # backwards compatibility
     ]:
@@ -69,7 +70,11 @@ def on_starting(server=None):
         try_create_single_tenant(
             SINGLE_TENANT_UUID,
             create_default_user=(
-                False if AUTH_TYPE == IdentityManagerTypes.OAUTH2PROXY.value else True
+                AUTH_TYPE
+                not in [
+                    IdentityManagerTypes.OAUTH2PROXY.value,
+                    IdentityManagerTypes.OAUTH.value,
+                ]
             ),
         )
 
